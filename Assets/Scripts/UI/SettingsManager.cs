@@ -238,8 +238,12 @@ public class SettingsManager : MonoBehaviour
         settingsChanged = false;
     }
 
+    public System.Action onSettingsClosed;
+
     private void CloseSettings()
     {
+        if (onSettingsClosed != null)
+            onSettingsClosed.Invoke();
         Destroy(gameObject);
     }
 }

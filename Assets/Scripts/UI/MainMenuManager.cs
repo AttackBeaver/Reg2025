@@ -1,41 +1,54 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using TMPro;
 
 public class MainMenuManager : MonoBehaviour
 {
     [SerializeField] private GameObject settingsWindowPrefab;
-    private GameObject currentSettingsWindow;
+    [SerializeField] private GameObject coinShopPrefab;
+    [SerializeField] private GameObject backgroundShopPrefab;
+    [SerializeField] private CanvasGroup mainMenuCanvasGroup;
+    [SerializeField] private TextMeshProUGUI coinsText;
+
+    private GameObject currentWindow;
+
+    private void Start()
+    {
+        UpdateCoinsDisplay();
+
+        if (CurrencyManager.Instance != null)
+            CurrencyManager.Instance.OnCoinsChanged += OnCoinsChanged;
+    }
+
+    private void OnDestroy()
+    {
+        if (CurrencyManager.Instance != null)
+            CurrencyManager.Instance.OnCoinsChanged -= OnCoinsChanged;
+    }
 
     public void OnPlayButtonClicked()
     {
-        // Будем загружать игровую сцену
         SceneManager.LoadScene("GameScene");
     }
 
     public void OnLevelEditorButtonClicked()
     {
-        // Будем загружать редактор уровней
         SceneManager.LoadScene("LevelEditor");
     }
 
     public void OnSettingsButtonClicked()
     {
-        if (settingsWindowPrefab != null && currentSettingsWindow == null)
-        {
-            currentSettingsWindow = Instantiate(settingsWindowPrefab);
-        }
+        OpenWindow(settingsWindowPrefab);
     }
 
     public void OnShopButtonClicked()
     {
-        Debug.Log("Shop opened");
-        // Здесь будет открытие магазина
+        OpenWindow(coinShopPrefab);
     }
 
     public void OnBackgroundShopButtonClicked()
     {
-        Debug.Log("Background shop opened");
-        // Здесь будет открытие магазина фонов
+        OpenWindow(backgroundShopPrefab);
     }
 
     public void OnExitButtonClicked()
@@ -45,5 +58,65 @@ public class MainMenuManager : MonoBehaviour
 #else
         Application.Quit();
 #endif
+    }
+
+    private void OpenWindow(GameObject windowPrefab)
+    {
+        if (windowPrefab != null && currentWindow == null)
+        {
+            currentWindow = Instantiate(windowPrefab);
+
+            // Делаем главное меню неактивным
+            if (mainMenuCanvasGroup != null)
+            {
+                mainMenuCanvasGroup.interactable = false;
+                mainMenuCanvasGroup.blocksRaycasts = false;
+            }
+
+            // Подписываемся на закрытие окна
+            StartCoroutine(WaitForWindowClose(currentWindow));
+        }
+    }
+
+    private System.Collections.IEnumerator WaitForWindowClose(GameObject window)
+    {
+        while (window != null)
+        {
+            yield return null;
+        }
+
+        // Восстанавливаем активность главного меню
+        if (mainMenuCanvasGroup != null)
+        {
+            mainMenuCanvasGroup.interactable = true;
+            mainMenuCanvasGroup.blocksRaycasts = true;
+        }
+
+        currentWindow = null;
+        UpdateCoinsDisplay();
+    }
+
+    private void UpdateCoinsDisplay()
+    {
+        if (coinsText != null && CurrencyManager.Instance != null)
+        {
+            int coins = CurrencyManager.Instance.GetCoins();
+            coinsText.text = FormatCoins(coins);
+        }
+    }
+
+    private string FormatCoins(int coins)
+    {
+        if (coins >= 1000)
+        {
+            float kCoins = coins / 1000f;
+            return kCoins.ToString("0.0") + "k";
+        }
+        return coins.ToString();
+    }
+
+    private void OnCoinsChanged(int newCoins)
+    {
+        UpdateCoinsDisplay();
     }
 }
