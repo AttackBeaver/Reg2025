@@ -9,6 +9,22 @@ public class CurrencyManager : MonoBehaviour
 
     private int currentCoins = 1000; // Начальное значение
 
+    private UserDataManager userDataManager;
+
+    [Obsolete]
+    private void Start()
+    {
+        userDataManager = FindObjectOfType<UserDataManager>();
+        if (userDataManager != null)
+        {
+            currentCoins = GetCoins();
+        }
+        else
+        {
+            LoadCoins();
+        }
+    }
+
     private void Awake()
     {
         if (Instance == null)
@@ -33,7 +49,15 @@ public class CurrencyManager : MonoBehaviour
     {
         currentCoins += amount;
         OnCoinsChanged?.Invoke(currentCoins);
-        SaveCoins();
+
+        if (userDataManager != null)
+        {
+            userDataManager.AddCoins(amount);
+        }
+        else
+        {
+            SaveCoins();
+        }
     }
 
     public bool SpendCoins(int amount)
@@ -42,11 +66,29 @@ public class CurrencyManager : MonoBehaviour
         {
             currentCoins -= amount;
             OnCoinsChanged?.Invoke(currentCoins);
-            SaveCoins();
+
+            if (userDataManager != null)
+            {
+                // В UserDataManager должен быть метод SpendCoins
+                // Пока просто вычитаем через AddCoins с отрицательным значением
+                userDataManager.AddCoins(-amount);
+            }
+            else
+            {
+                SaveCoins();
+            }
             return true;
         }
         return false;
     }
+
+    // Добавим метод для установки монет из UserData
+    public void SetCoins(int coins)
+    {
+        currentCoins = coins;
+        OnCoinsChanged?.Invoke(currentCoins);
+    }
+
 
     private void SaveCoins()
     {

@@ -21,11 +21,21 @@ public class SettingsManager : MonoBehaviour
     [SerializeField] private Button noButton;
     [SerializeField] private TextMeshProUGUI noButtonText;
 
-    private SettingsData currentSettings;
-    private SettingsData tempSettings;
+    private GameSettings currentSettings;
+    private GameSettings tempSettings;
     private bool settingsChanged = false;
     private float dialogTimer = 10f;
     private bool dialogActive = false;
+
+    private GameSettingsManager settingsManager;
+
+    [System.Obsolete]
+    private void Start()
+    {
+        settingsManager = FindObjectOfType<GameSettingsManager>();
+        LoadSettings();
+        InitializeUI();
+    }
 
     private void Awake()
     {
@@ -43,9 +53,24 @@ public class SettingsManager : MonoBehaviour
 
     private void LoadSettings()
     {
-        // Пока загружаем дефолтные, потом добавим загрузку из файла
-        currentSettings = new SettingsData();
-        tempSettings = new SettingsData();
+        if (settingsManager != null)
+        {
+            GameSettings loadedSettings = settingsManager.GetCurrentSettings();
+            currentSettings = loadedSettings;
+            tempSettings = new GameSettings()
+            {
+                screenWidth = loadedSettings.screenWidth,
+                screenHeight = loadedSettings.screenHeight,
+                isFullscreen = loadedSettings.isFullscreen,
+                soundEnabled = loadedSettings.soundEnabled,
+                language = loadedSettings.language
+            };
+        }
+        else
+        {
+            currentSettings = new GameSettings();
+            tempSettings = new GameSettings();
+        }
     }
 
     private void InitializeUI()
@@ -123,14 +148,6 @@ public class SettingsManager : MonoBehaviour
         settingsChanged = true;
     }
 
-    private void OnResetButtonClicked()
-    {
-        // Сброс к настройкам по умолчанию
-        tempSettings = new SettingsData();
-        settingsChanged = true;
-        UpdateUIFromTempSettings();
-    }
-
     private void UpdateUIFromTempSettings()
     {
         resolutionDropdown.value = GetResolutionIndex(tempSettings.screenWidth, tempSettings.screenHeight);
@@ -205,27 +222,49 @@ public class SettingsManager : MonoBehaviour
         }
     }
 
-    private void ApplySettings()
+   private void ApplySettings()
     {
         currentSettings = tempSettings;
         settingsChanged = false;
-
-        // Применяем настройки экрана
-        Screen.SetResolution(currentSettings.screenWidth, currentSettings.screenHeight, currentSettings.isFullscreen);
-
-        // Применяем настройки звука
-        AudioListener.volume = currentSettings.soundEnabled ? 1f : 0f;
-
+        
+        // Применяем настройки через GameSettingsManager
+        if (settingsManager != null)
+        {
+            settingsManager.SetResolution(currentSettings.screenWidth, currentSettings.screenHeight);
+            settingsManager.SetFullscreen(currentSettings.isFullscreen);
+            settingsManager.SetSoundEnabled(currentSettings.soundEnabled);
+            settingsManager.SetLanguage(currentSettings.language);
+        }
+        else
+        {
+            // Резервное применение
+            Screen.SetResolution(currentSettings.screenWidth, currentSettings.screenHeight, currentSettings.isFullscreen);
+            AudioListener.volume = currentSettings.soundEnabled ? 1f : 0f;
+        }
+        
         // Здесь позже добавим смену языка
         Debug.Log($"Settings applied: {currentSettings.screenWidth}x{currentSettings.screenHeight}, " +
                  $"Fullscreen: {currentSettings.isFullscreen}, Sound: {currentSettings.soundEnabled}, " +
                  $"Language: {currentSettings.language}");
     }
+    
+    private void OnResetButtonClicked()
+    {
+        // Сброс к настройкам по умолчанию
+        if (settingsManager != null)
+        {
+            settingsManager.ResetToDefault();
+            LoadSettings(); // Перезагружаем настройки
+            UpdateUIFromTempSettings();
+            settingsChanged = false;
+        }
+    }
+
 
     private void DiscardChanges()
     {
         // Восстанавливаем предыдущие настройки
-        tempSettings = new SettingsData()
+        tempSettings = new GameSettings()
         {
             screenWidth = currentSettings.screenWidth,
             screenHeight = currentSettings.screenHeight,
