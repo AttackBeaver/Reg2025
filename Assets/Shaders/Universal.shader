@@ -1,4 +1,4 @@
-Shader "WMelon/Universal"
+Shader "Universal"
 {
     Properties
     {
@@ -272,5 +272,5 @@ Shader "WMelon/Universal"
         }
     }
 
-    CustomEditor "Watermelon.Shader.UniversalGUI"
+    CustomEditor "UniversalGUI"
 }
