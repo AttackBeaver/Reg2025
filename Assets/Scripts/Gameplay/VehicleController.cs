@@ -256,7 +256,7 @@ public class VehicleController : MonoBehaviour
             Destroy(other.gameObject);
 
             // Звук сбора монеты
-            AudioManager.Instance.PlayCoinPickup();
+            //AudioManager.Instance.PlayCoinPickup();
         }
     }
 }

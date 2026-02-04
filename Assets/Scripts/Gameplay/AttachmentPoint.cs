@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class AttachmentPoint : MonoBehaviour
 {
@@ -10,7 +11,7 @@ public class AttachmentPoint : MonoBehaviour
         if (currentAttachment != null) return false;
 
         // Проверяем тип предмета (можно добавить теги или компоненты)
-        string attachmentType = attachment.GetComponent<AttachmentItem>().attachmentType;
+        string attachmentType = attachment.GetComponent<AttachmentItemData>().type;
 
         foreach (string type in allowedAttachmentTypes)
         {
